@@ -30,10 +30,10 @@ import java.util.concurrent.ThreadLocalRandom;
             ServerSocketChannel servSock = ServerSocketChannel.open();
             servSock.configureBlocking(false);
 
-            //binding
+            //binding socket mit IP Adresse
             servSock.socket().bind(new InetSocketAddress(6332));
 
-            // register and accept server socket
+            // register this channel mit given selector and return the selection key and accept server socket
             servSock.register(selector, SelectionKey.OP_ACCEPT);
 
             // All Strings will be converted to US-ASCII coded byte to write in the Bytebuffer
@@ -42,7 +42,7 @@ import java.util.concurrent.ThreadLocalRandom;
             dictSender = new HashMap<Integer, String>();
             dictRcpt = new HashMap<Integer, String>();
 
-
+            // select return the numbers of keys. is a set of keys for channel. channel are ready for IO Operations
             while (true) {
                 if(selector.select() == 0) /* blocking */
                     continue;
@@ -55,8 +55,9 @@ import java.util.concurrent.ThreadLocalRandom;
                     SelectionKey key = iter.next();
 
                     if(key.isAcceptable()) {
-                        //a connection is accepted by a ServerSocketChannel
+                        //a connection is accepted by a ServerSocketChannel, channel() return the channel for this key
                         ServerSocketChannel sock = (ServerSocketChannel) key.channel();
+                        //accept the connection made with this channel
                         SocketChannel client = sock.accept();
                         client.configureBlocking(false);
                         client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
@@ -150,9 +151,10 @@ import java.util.concurrent.ThreadLocalRandom;
         /* Send message over channel, include <CRLF> */
         private static void sendMessage(String str, ByteBuffer buf, SocketChannel channel) {
             byte[] message = new String(str + "\r\n").getBytes(messageCharset);
+            //wrap: wrap byte array into buffer
             buf = ByteBuffer.wrap(message);
             try {
-                channel.write(buf);
+                channel.write(buf);//write to channel from buffer
             } catch (IOException e) {
                 System.out.println("ERR_WRITE_SOCK_CHANNEL");
                 e.printStackTrace();
